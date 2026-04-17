@@ -1,0 +1,181 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-void-black: #000000;
+  --color-deep-space: #020209;
+  --color-nebula-dark: #060618;
+  --color-horizon: #0d0d2b;
+  --color-stellar-surface: #1a1a4e;
+  --color-pulsar: #2d2d8a;
+  --color-nebula-blue: #4a9eff;
+  --color-quantum-purple: #7b4fff;
+  --color-plasma-orange: #ff6b35;
+  --color-starlight-white: rgba(255, 255, 255, 0.92);
+  --scroll-progress: 0;
+  color-scheme: dark;
+}
+
+html {
+  background: linear-gradient(180deg, #000000 0%, #020209 46%, #060618 100%);
+  scroll-behavior: auto;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(74, 158, 255, 0.08), transparent 20%),
+    radial-gradient(circle at 80% 10%, rgba(123, 79, 255, 0.08), transparent 18%),
+    linear-gradient(180deg, #000000 0%, #020209 46%, #060618 100%);
+  color: var(--color-starlight-white);
+  font-family: Inter, sans-serif;
+  overflow-x: clip;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(74, 158, 255, 0.85);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(74, 158, 255, 0.12);
+}
+
+button:active,
+a:active {
+  transform: translateY(1px);
+}
+
+::selection {
+  background: rgba(74, 158, 255, 0.35);
+  color: white;
+}
+
+@layer base {
+  * {
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  .section-shell {
+    @apply relative;
+  }
+
+  .hud-label {
+    @apply font-mono text-xs uppercase tracking-[0.38em] text-nebula-blue;
+  }
+
+  .section-title {
+    @apply mt-3 font-display text-4xl font-black leading-tight text-white md:text-6xl;
+  }
+
+  .section-copy {
+    @apply mt-5 max-w-3xl text-lg leading-relaxed text-white/[0.72];
+  }
+
+  .oscilloscope-line {
+    position: relative;
+    width: 140px;
+    height: 24px;
+    background:
+      linear-gradient(90deg, transparent 0%, rgba(74, 158, 255, 0.95) 12%, rgba(255, 107, 53, 0.6) 38%, rgba(123, 79, 255, 0.9) 62%, transparent 100%);
+    clip-path: polygon(0% 50%, 10% 50%, 18% 18%, 30% 78%, 42% 28%, 52% 64%, 66% 36%, 78% 50%, 100% 50%, 100% 58%, 0% 58%);
+    filter: drop-shadow(0 0 16px rgba(74, 158, 255, 0.6));
+  }
+}
+
+@keyframes screen-shake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  20% {
+    transform: translate3d(-4px, 2px, 0);
+  }
+  40% {
+    transform: translate3d(4px, -3px, 0);
+  }
+  60% {
+    transform: translate3d(-2px, 4px, 0);
+  }
+  80% {
+    transform: translate3d(3px, -2px, 0);
+  }
+}
+
+.screen-shake {
+  animation: screen-shake 0.28s ease-in-out 3;
+}
+
+@keyframes wormhole-flow {
+  0% {
+    transform: translate(-50%, -50%) scale(0.55);
+    opacity: 0.04;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.35);
+    opacity: 0.18;
+  }
+}
+
+.wormhole-tunnel::before,
+.wormhole-tunnel::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 9999px;
+  border: 1px solid rgba(74, 158, 255, 0.14);
+  animation: wormhole-flow 6.5s linear infinite;
+}
+
+.wormhole-tunnel::before {
+  width: 34rem;
+  height: 34rem;
+}
+
+.wormhole-tunnel::after {
+  width: 18rem;
+  height: 18rem;
+  border-color: rgba(123, 79, 255, 0.18);
+  animation-duration: 4.8s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.reduce-motion *,
+  .reduce-motion * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (pointer: fine) {
+  body {
+    cursor: none;
+  }
+}
