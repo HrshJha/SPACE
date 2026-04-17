@@ -52,16 +52,17 @@ export function AstroBot() {
     }
 
     const cleanQuestion = question.trim();
+    const outgoingMessages = [...messages, { role: 'user', text: cleanQuestion }];
     setValue('');
     setSending(true);
-    setMessages((current) => [...current, { role: 'user', text: cleanQuestion }]);
+    setMessages(outgoingMessages);
 
     try {
       if (endpoint) {
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: [...messages, { role: 'user', text: cleanQuestion }] }),
+          body: JSON.stringify({ messages: outgoingMessages }),
         });
 
         if (!response.ok) {

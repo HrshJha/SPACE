@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 
 const PORT = Number.parseInt(process.env.COSMOS7_PORT ?? '8787', 10);
+const HOST = process.env.COSMOS7_HOST ?? '127.0.0.1';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL;
 
@@ -9,6 +10,24 @@ Answer questions about space, this website, and the cosmos using precise scienti
 Reference real missions, real physicists, and real data where relevant.
 You speak with the calm authority of someone who has seen the edge of the observable universe.
 Keep answers concise, cinematic, and scientifically grounded.`;
+
+function findFallbackReply(question) {
+  const cleanQuestion = String(question ?? '').trim();
+
+  if (/black hole/i.test(cleanQuestion)) {
+    return 'General relativity predicts that once matter passes the event horizon, every future-directed path points inward. We do not yet have a tested quantum theory of the singular interior, so the honest answer is that physics becomes incomplete exactly where the question becomes most extreme.';
+  }
+
+  if (/observable universe/i.test(cleanQuestion)) {
+    return 'The observable universe is about 93 billion light-years across today because space expanded while the oldest light was traveling. That is why its visible scale is far larger than 13.8 billion light-years.';
+  }
+
+  if (/neutron star/i.test(cleanQuestion)) {
+    return 'You would never arrive intact. Tidal forces, radiation, and the star’s crushing gravity would dismantle ordinary matter long before any surface encounter could occur.';
+  }
+
+  return 'COSMOS-7 here. My long-range link is quiet, so I am answering from onboard knowledge: the universe is expanding, gravity sculpts structure, and every clean measurement matters more than mythology.';
+}
 
 function sendJson(response, statusCode, payload) {
   response.writeHead(statusCode, {
@@ -27,6 +46,11 @@ function normalizeMessages(messages) {
       role: message.role,
       content: [{ type: 'text', text: String(message.text ?? '') }],
     }));
+}
+
+function getLatestUserQuestion(messages) {
+  const latestUserMessage = [...(messages ?? [])].reverse().find((message) => message?.role === 'user');
+  return latestUserMessage?.text ?? '';
 }
 
 const server = createServer(async (request, response) => {
@@ -58,9 +82,9 @@ const server = createServer(async (request, response) => {
   }
 
   if (!ANTHROPIC_API_KEY || !ANTHROPIC_MODEL) {
-    sendJson(response, 503, {
-      error:
-        'Missing ANTHROPIC_API_KEY or ANTHROPIC_MODEL. COSMOS-7 is falling back to onboard local knowledge.',
+    sendJson(response, 200, {
+      reply: findFallbackReply(getLatestUserQuestion(payload.messages)),
+      mode: 'fallback',
     });
     return;
   }
@@ -103,14 +127,16 @@ const server = createServer(async (request, response) => {
         'COSMOS-7 received the transmission, but the response arrived empty from deep space.',
     });
   } catch (error) {
-    sendJson(response, 502, {
+    sendJson(response, 200, {
+      reply: findFallbackReply(getLatestUserQuestion(payload.messages)),
+      mode: 'fallback',
       error: error instanceof Error ? error.message : 'Upstream request failed',
     });
   }
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
   process.stdout.write(
-    `COSMOS-7 server listening on http://localhost:${PORT}/api/cosmos7\n`,
+    `COSMOS-7 server listening on http://${HOST}:${PORT}/api/cosmos7\n`,
   );
 });
