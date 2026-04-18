@@ -1,17 +1,18 @@
 export const cosmicPalette = {
   voidBlack: '#000000',
-  deepSpace: '#020209',
-  nebulaDark: '#060618',
-  horizon: '#0d0d2b',
-  stellarSurface: '#1a1a4e',
-  pulsar: '#2d2d8a',
-  nebulaBlue: '#4a9eff',
-  quantumPurple: '#7b4fff',
+  deepSpace: '#050510',
+  nebulaDark: '#0b1020',
+  horizon: '#101735',
+  stellarSurface: '#18204a',
+  pulsar: '#2f3b8c',
+  nebulaBlue: '#00c2ff',
+  quantumPurple: '#6a5cff',
   plasmaOrange: '#ff6b35',
   starlightWhite: 'rgba(255,255,255,0.92)',
   eventHorizon: 'rgba(0,0,0,0.98)',
   auroraGradient:
-    'linear-gradient(135deg, #4a9eff 0%, #7b4fff 50%, #ff6b35 100%)',
+    'linear-gradient(135deg, #00c2ff 0%, #6a5cff 50%, #ff6b35 100%)',
+  isroSaffron: '#ff9933',
   pillarsGold: '#f5c842',
   orionPurple: '#9b59b6',
   orionMagenta: '#e91e8c',
@@ -27,7 +28,7 @@ export const cosmicAlpha = {
   glassStrong: 'rgba(255,255,255,0.08)',
   glassSoft: 'rgba(255,255,255,0.04)',
   borderSoft: 'rgba(255,255,255,0.12)',
-  borderBright: 'rgba(74,158,255,0.35)',
+  borderBright: 'rgba(0,194,255,0.35)',
 };
 
 export const sectionAuras = {

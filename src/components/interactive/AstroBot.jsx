@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cosmosFallbackAnswers, cosmosPrompts } from '../../utils/spaceData.js';
 import { useCosmosStore } from '../../store/useCosmosStore.js';
@@ -11,51 +11,143 @@ function findFallback(question) {
   );
 }
 
+function createMessage(id, role, text) {
+  return { id, role, text };
+}
+
 export function AstroBot() {
   const chatbotOpen = useCosmosStore((state) => state.chatbotOpen);
   const setChatbotOpen = useCosmosStore((state) => state.setChatbotOpen);
   const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      text: 'COSMOS-7 online. Ask about black holes, stellar evolution, missions, or the machinery of this universe.',
-    },
+    createMessage(
+      'assistant-0',
+      'assistant',
+      'COSMOS-7 online. Ask about black holes, stellar evolution, missions, or the machinery of this universe.',
+    ),
   ]);
   const [value, setValue] = useState('');
-  const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(false);
   const endpoint = import.meta.env.VITE_COSMOS7_ENDPOINT;
   const suggested = useMemo(() => cosmosPrompts, []);
+  const messagesRef = useRef(messages);
+  const logRef = useRef(null);
+  const nextIdRef = useRef(1);
+  const typingRef = useRef({
+    intervalId: 0,
+    messageId: null,
+    fullText: '',
+  });
+
+  useEffect(() => {
+    messagesRef.current = messages;
+
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  useEffect(
+    () => () => {
+      if (typingRef.current.intervalId) {
+        window.clearInterval(typingRef.current.intervalId);
+      }
+    },
+    [],
+  );
+
+  const getMessageId = (role) => `${role}-${nextIdRef.current++}`;
+
+  const flushTyping = () => {
+    if (typingRef.current.intervalId) {
+      window.clearInterval(typingRef.current.intervalId);
+    }
+
+    if (typingRef.current.messageId) {
+      const { messageId, fullText } = typingRef.current;
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === messageId ? { ...message, text: fullText } : message,
+        ),
+      );
+    }
+
+    typingRef.current = {
+      intervalId: 0,
+      messageId: null,
+      fullText: '',
+    };
+  };
 
   const streamReply = (text) => {
-    setMessages((current) => [...current, { role: 'assistant', text: '' }]);
-    let index = 0;
-    const interval = window.setInterval(() => {
-      index += 1;
-      setMessages((current) => {
-        const next = [...current];
-        next[next.length - 1] = {
-          role: 'assistant',
-          text: text.slice(0, index),
-        };
-        return next;
-      });
+    flushTyping();
 
-      if (index >= text.length) {
-        window.clearInterval(interval);
-        setSending(false);
+    const assistantId = getMessageId('assistant');
+    const reply = String(text ?? '');
+
+    setMessages((current) => [...current, createMessage(assistantId, 'assistant', '')]);
+
+    if (!reply) {
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === assistantId
+            ? {
+                ...message,
+                text: 'COSMOS-7 received the transmission, but the reply arrived empty from deep space.',
+              }
+            : message,
+        ),
+      );
+      return;
+    }
+
+    typingRef.current = {
+      intervalId: 0,
+      messageId: assistantId,
+      fullText: reply,
+    };
+
+    let index = 0;
+    typingRef.current.intervalId = window.setInterval(() => {
+      index += 2;
+
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === assistantId
+            ? { ...message, text: reply.slice(0, index) }
+            : message,
+        ),
+      );
+
+      if (index >= reply.length) {
+        window.clearInterval(typingRef.current.intervalId);
+        typingRef.current = {
+          intervalId: 0,
+          messageId: null,
+          fullText: '',
+        };
       }
-    }, 18);
+    }, 14);
   };
 
   const sendMessage = async (question) => {
-    if (!question.trim() || sending) {
+    if (!question.trim() || loading) {
       return;
     }
 
     const cleanQuestion = question.trim();
-    const outgoingMessages = [...messages, { role: 'user', text: cleanQuestion }];
+    flushTyping();
+
+    const userMessage = createMessage(getMessageId('user'), 'user', cleanQuestion);
+    const outgoingMessages = [...messagesRef.current, userMessage].map((message) => ({
+      role: message.role,
+      text: message.text,
+    }));
+
     setValue('');
-    setSending(true);
-    setMessages(outgoingMessages);
+    setMessages((current) => [...current, userMessage]);
+    setLoading(true);
+
+    let reply = findFallback(cleanQuestion);
 
     try {
       if (endpoint) {
@@ -70,13 +162,13 @@ export function AstroBot() {
         }
 
         const payload = await response.json();
-        streamReply(payload.reply ?? findFallback(cleanQuestion));
-        return;
+        reply = payload.reply ?? reply;
       }
-
-      streamReply(findFallback(cleanQuestion));
     } catch {
-      streamReply(findFallback(cleanQuestion));
+      reply = findFallback(cleanQuestion);
+    } finally {
+      setLoading(false);
+      streamReply(reply);
     }
   };
 
@@ -96,9 +188,7 @@ export function AstroBot() {
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/[0.45]">
             AI Astronaut
           </p>
-          <p className="font-display text-sm font-bold text-white">
-            COSMOS-7
-          </p>
+          <p className="font-display text-sm font-bold text-white">COSMOS-7</p>
         </div>
       </button>
       <AnimatePresence>
@@ -132,16 +222,17 @@ export function AstroBot() {
                     key={prompt}
                     type="button"
                     onClick={() => sendMessage(prompt)}
-                    className="rounded-full border border-white/10 px-3 py-2 text-left text-xs text-white/70 transition hover:border-nebula-blue/30 hover:text-white"
+                    disabled={loading}
+                    className="rounded-full border border-white/10 px-3 py-2 text-left text-xs text-white/70 transition hover:border-nebula-blue/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {prompt}
                   </button>
                 ))}
               </div>
-              <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
-                {messages.map((message, index) => (
+              <div ref={logRef} className="max-h-80 space-y-3 overflow-y-auto pr-1">
+                {messages.map((message) => (
                   <div
-                    key={`${message.role}-${index}`}
+                    key={message.id}
                     className={`rounded-2xl p-4 text-sm ${
                       message.role === 'assistant'
                         ? 'border border-white/10 bg-white/5 text-white/[0.84]'
@@ -169,10 +260,10 @@ export function AstroBot() {
                 />
                 <button
                   type="submit"
-                  disabled={sending}
+                  disabled={loading}
                   className="w-full rounded-full border border-nebula-blue/30 bg-nebula-blue/[0.18] px-4 py-3 font-mono text-xs uppercase tracking-[0.28em] text-white transition hover:bg-nebula-blue/[0.26] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {sending ? 'Transmitting...' : 'Transmit Question'}
+                  {loading ? 'Transmitting...' : 'Transmit Question'}
                 </button>
               </form>
             </div>

@@ -7,10 +7,10 @@ export function HeroUniverse({ onPrimaryAction, onSecondaryAction }) {
   return (
     <section
       id="hero"
-      className="section-shell relative flex min-h-screen items-center justify-center overflow-hidden"
+      className="section-shell cosmos-section relative flex min-h-screen items-center justify-center overflow-hidden"
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.04),transparent_20%),radial-gradient(circle_at_center,rgba(74,158,255,0.08),transparent_38%),linear-gradient(180deg,rgba(0,0,0,0.05),rgba(0,0,0,0.3))]" />
-      <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center px-6 pb-16 pt-32 text-center">
+      <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center pb-16 pt-32 text-center">
         <motion.p
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -21,7 +21,7 @@ export function HeroUniverse({ onPrimaryAction, onSecondaryAction }) {
         </motion.p>
         <HologramText
           text="EXPLORE THE INFINITE COSMOS"
-          className="max-w-6xl font-display text-[clamp(2.8rem,7vw,7.8rem)] font-black uppercase leading-[0.92] tracking-[-0.04em]"
+          className="display-headline max-w-6xl uppercase leading-[0.92] tracking-[-0.04em]"
         />
         <motion.div
           initial={{ opacity: 0 }}

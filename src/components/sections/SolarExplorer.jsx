@@ -32,13 +32,19 @@ function PlanetOrb({ planet, selected, onSelect }) {
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[orbitRadius - 0.012, orbitRadius + 0.012, 160]} />
-        <meshBasicMaterial color="#3a4c89" transparent opacity={0.28} />
+        <meshBasicMaterial color="#22315d" transparent opacity={0.28} />
       </mesh>
       <group ref={groupRef} onClick={() => onSelect(planet.id)} scale={selected ? 1.25 : 1}>
         <mesh>
           <sphereGeometry args={[size, 32, 32]} />
           <meshStandardMaterial color={planet.color} roughness={0.96} metalness={0.04} />
         </mesh>
+        {selected ? (
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[size * 1.4, size * 1.7, 72]} />
+            <meshBasicMaterial color="#00c2ff" transparent opacity={0.5} side={DoubleSide} />
+          </mesh>
+        ) : null}
         {planet.id === 'saturn' ? (
           <mesh rotation={[Math.PI / 2.4, 0.3, 0]}>
             <ringGeometry args={[size * 1.45, size * 2.3, 120]} />
@@ -157,7 +163,7 @@ export function SolarExplorer() {
   return (
     <section
       id="solar-system"
-      className="section-shell relative min-h-screen px-6 py-24"
+      className="section-shell cosmos-section relative min-h-screen"
       style={{
         background: `radial-gradient(circle at top, ${planet.atmosphereColor}22, transparent 28%)`,
       }}
@@ -189,11 +195,7 @@ export function SolarExplorer() {
                 key={item.id}
                 type="button"
                 onClick={() => setSelectedPlanetId(item.id)}
-                className={`rounded-full border px-4 py-2 text-sm transition ${
-                  item.id === selectedPlanetId
-                    ? 'border-white/40 bg-white/10 text-white'
-                    : 'border-white/10 bg-white/5 text-white/[0.65] hover:text-white'
-                }`}
+                className={`glow-button-primary ${item.id === selectedPlanetId ? '' : 'glow-button-secondary'}`}
               >
                 {item.name}
               </button>

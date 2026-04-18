@@ -9,9 +9,9 @@ void main() {
   float angle = atan(centered.y, centered.x);
 
   // Orbital turbulence adds plasma filaments around the disk surface.
-  float turbulence = sin(angle * 14.0 + uTime * 1.8) * 0.5 + 0.5;
-  float shear = sin((radius * 38.0 - uTime * 2.6) + angle * 4.0) * 0.5 + 0.5;
-  float hotBand = smoothstep(0.44, 0.16, abs(radius - 0.31));
+  float turbulence = sin(angle * 16.0 + uTime * 2.0) * 0.5 + 0.5;
+  float shear = sin((radius * 46.0 - uTime * 2.9) + angle * 4.6) * 0.5 + 0.5;
+  float hotBand = smoothstep(0.38, 0.12, abs(radius - 0.28));
 
   // Doppler beaming brightens the approaching side and reddens the receding side.
   float approach = smoothstep(-1.0, 1.0, cos(angle));
@@ -20,7 +20,7 @@ void main() {
   vec3 color = mix(deepRed, blueWhite, approach);
 
   // Inner-rim heating intensifies the disk toward the event horizon.
-  color *= hotBand * (1.0 + turbulence * 0.4 + shear * 0.25 + uPulse * 0.3);
+  color *= hotBand * (1.0 + turbulence * 0.48 + shear * 0.3 + uPulse * 0.36);
 
   gl_FragColor = vec4(color, hotBand * 0.86);
 }

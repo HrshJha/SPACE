@@ -5,7 +5,7 @@ export function CosmicCard({ children, className = '', ...props }) {
     <motion.div
       whileHover={{ rotateX: 4, rotateY: -4, y: -6 }}
       transition={{ type: 'spring', stiffness: 220, damping: 20 }}
-      className={`relative overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-6 backdrop-blur-2xl ${className}`}
+      className={`cosmic-card ${className}`}
       {...props}
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(74,158,255,0.16),transparent_42%)]" />

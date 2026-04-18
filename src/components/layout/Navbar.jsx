@@ -17,6 +17,7 @@ export function Navbar({ onToggleAudio }) {
   const activeZone = useCosmosStore((state) => state.activeZone);
   const audioEnabled = useCosmosStore((state) => state.audioEnabled);
   const setMenuOpen = useCosmosStore((state) => state.setMenuOpen);
+  const setChatbotOpen = useCosmosStore((state) => state.setChatbotOpen);
   const activeLabel = useMemo(() => activeZone.toUpperCase(), [activeZone]);
 
   const scrollToId = (id) => {
@@ -27,17 +28,17 @@ export function Navbar({ onToggleAudio }) {
     <motion.nav
       initial={{ opacity: 0, y: -24 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed inset-x-4 top-4 z-50 mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/10 bg-black/[0.35] px-4 py-3 backdrop-blur-xl"
+      className="fixed inset-x-4 top-4 z-50 mx-auto flex max-w-7xl items-center justify-between gap-4 rounded-full border border-white/10 bg-black/[0.45] px-4 py-3 backdrop-blur-2xl"
     >
       <button
         type="button"
         onClick={() => scrollToId('hero')}
-        className="font-display text-sm font-bold uppercase tracking-[0.35em] text-white"
+        className="min-w-[8rem] text-left font-display text-sm font-bold uppercase tracking-[0.35em] text-white"
         aria-label="Scroll to hero section"
       >
         Cosmos
       </button>
-      <div className="hidden items-center gap-4 lg:flex">
+      <div className="hidden items-center gap-4 xl:flex">
         {navItems.map((item) => (
           <button
             key={item.id}
@@ -50,21 +51,29 @@ export function Navbar({ onToggleAudio }) {
         ))}
       </div>
       <div className="flex items-center gap-3">
-        <div className="hidden rounded-full border border-white/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.28em] text-white/60 md:block">
+        <div className="hidden rounded-full border border-white/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.28em] text-white/60 lg:block">
           {activeLabel}
         </div>
         <button
           type="button"
           onClick={onToggleAudio}
-          className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-[0.25em] text-white/80 transition hover:border-nebula-blue/40 hover:text-white"
+          className="glow-button-primary glow-button-secondary"
           aria-label={audioEnabled ? 'Disable ambient audio' : 'Enable ambient audio'}
         >
           Audio {audioEnabled ? 'On' : 'Off'}
         </button>
         <button
           type="button"
+          onClick={() => setChatbotOpen(true)}
+          className="hidden lg:inline-flex glow-button-primary glow-button-secondary"
+          aria-label="Open COSMOS-7 assistant"
+        >
+          AI Assistant
+        </button>
+        <button
+          type="button"
           onClick={() => setMenuOpen(true)}
-          className="relative h-11 w-11 overflow-hidden rounded-full border border-white/[0.15]"
+          className="relative h-11 w-11 overflow-hidden rounded-full border border-white/[0.15] bg-white/[0.03]"
           aria-label="Open wormhole navigation menu"
         >
           <span className="absolute inset-[20%] rounded-full border border-white/[0.25]" />

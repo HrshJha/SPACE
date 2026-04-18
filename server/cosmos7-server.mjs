@@ -2,6 +2,9 @@ import { createServer } from 'node:http';
 
 const PORT = Number.parseInt(process.env.COSMOS7_PORT ?? '8787', 10);
 const HOST = process.env.COSMOS7_HOST ?? '127.0.0.1';
+const COSMOS7_PROVIDER = process.env.COSMOS7_PROVIDER ?? 'auto';
+const OLLAMA_API_BASE = process.env.OLLAMA_API_BASE ?? 'http://127.0.0.1:11434';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? 'qwen2.5:7b-instruct';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL;
 
@@ -39,7 +42,15 @@ function sendJson(response, statusCode, payload) {
   response.end(JSON.stringify(payload));
 }
 
-function normalizeMessages(messages) {
+function getLatestUserQuestion(messages) {
+  const latestUserMessage = [...(messages ?? [])]
+    .reverse()
+    .find((message) => message?.role === 'user');
+
+  return latestUserMessage?.text ?? '';
+}
+
+function normalizeAnthropicMessages(messages) {
   return messages
     .filter((message) => message?.role === 'user' || message?.role === 'assistant')
     .map((message) => ({
@@ -48,9 +59,91 @@ function normalizeMessages(messages) {
     }));
 }
 
-function getLatestUserQuestion(messages) {
-  const latestUserMessage = [...(messages ?? [])].reverse().find((message) => message?.role === 'user');
-  return latestUserMessage?.text ?? '';
+function normalizeOllamaMessages(messages) {
+  return [
+    { role: 'system', content: SYSTEM_PROMPT },
+    ...(messages ?? [])
+      .filter((message) => message?.role === 'user' || message?.role === 'assistant')
+      .map((message) => ({
+        role: message.role,
+        content: String(message.text ?? ''),
+      })),
+  ];
+}
+
+function resolveProvider() {
+  if (COSMOS7_PROVIDER === 'ollama' || COSMOS7_PROVIDER === 'anthropic' || COSMOS7_PROVIDER === 'fallback') {
+    return COSMOS7_PROVIDER;
+  }
+
+  if (OLLAMA_MODEL) {
+    return 'ollama';
+  }
+
+  if (ANTHROPIC_API_KEY && ANTHROPIC_MODEL) {
+    return 'anthropic';
+  }
+
+  return 'fallback';
+}
+
+async function requestOllama(messages) {
+  const ollamaResponse = await fetch(`${OLLAMA_API_BASE}/api/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: OLLAMA_MODEL,
+      stream: false,
+      messages: normalizeOllamaMessages(messages),
+      options: {
+        temperature: 0.5,
+      },
+    }),
+  });
+
+  const ollamaJson = await ollamaResponse.json();
+
+  if (!ollamaResponse.ok) {
+    throw new Error(ollamaJson.error ?? 'Ollama request failed');
+  }
+
+  return String(ollamaJson.message?.content ?? '').trim();
+}
+
+async function requestAnthropic(messages) {
+  if (!ANTHROPIC_API_KEY || !ANTHROPIC_MODEL) {
+    throw new Error('Anthropic credentials are missing');
+  }
+
+  const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 700,
+      temperature: 0.5,
+      system: SYSTEM_PROMPT,
+      messages: normalizeAnthropicMessages(messages),
+    }),
+  });
+
+  const anthropicJson = await anthropicResponse.json();
+
+  if (!anthropicResponse.ok) {
+    throw new Error(anthropicJson.error?.message ?? 'Anthropic request failed');
+  }
+
+  return (anthropicJson.content ?? [])
+    .filter((item) => item.type === 'text')
+    .map((item) => item.text)
+    .join('\n\n')
+    .trim();
 }
 
 const server = createServer(async (request, response) => {
@@ -81,55 +174,37 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (!ANTHROPIC_API_KEY || !ANTHROPIC_MODEL) {
+  const provider = resolveProvider();
+  const latestQuestion = getLatestUserQuestion(payload.messages);
+
+  if (provider === 'fallback') {
     sendJson(response, 200, {
-      reply: findFallbackReply(getLatestUserQuestion(payload.messages)),
+      reply: findFallbackReply(latestQuestion),
       mode: 'fallback',
+      provider,
     });
     return;
   }
 
   try {
-    const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 700,
-        temperature: 0.5,
-        system: SYSTEM_PROMPT,
-        messages: normalizeMessages(payload.messages ?? []),
-      }),
-    });
-
-    const anthropicJson = await anthropicResponse.json();
-
-    if (!anthropicResponse.ok) {
-      sendJson(response, anthropicResponse.status, {
-        error: anthropicJson.error?.message ?? 'Anthropic request failed',
-      });
-      return;
-    }
-
-    const reply = (anthropicJson.content ?? [])
-      .filter((item) => item.type === 'text')
-      .map((item) => item.text)
-      .join('\n\n')
-      .trim();
+    const reply =
+      provider === 'ollama'
+        ? await requestOllama(payload.messages)
+        : await requestAnthropic(payload.messages);
 
     sendJson(response, 200, {
       reply:
         reply ||
         'COSMOS-7 received the transmission, but the response arrived empty from deep space.',
+      mode: provider,
+      provider,
+      model: provider === 'ollama' ? OLLAMA_MODEL : ANTHROPIC_MODEL,
     });
   } catch (error) {
     sendJson(response, 200, {
-      reply: findFallbackReply(getLatestUserQuestion(payload.messages)),
+      reply: findFallbackReply(latestQuestion),
       mode: 'fallback',
+      provider: 'fallback',
       error: error instanceof Error ? error.message : 'Upstream request failed',
     });
   }
@@ -137,6 +212,6 @@ const server = createServer(async (request, response) => {
 
 server.listen(PORT, HOST, () => {
   process.stdout.write(
-    `COSMOS-7 server listening on http://${HOST}:${PORT}/api/cosmos7\n`,
+    `COSMOS-7 server listening on http://${HOST}:${PORT}/api/cosmos7 using ${resolveProvider()}\n`,
   );
 });

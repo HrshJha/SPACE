@@ -1,10 +1,8 @@
 import { motion } from 'framer-motion';
 
 const variants = {
-  solid:
-    'border-transparent bg-nebula-blue/[0.18] text-white shadow-aura hover:bg-nebula-blue/[0.28]',
-  ghost:
-    'border-white/20 bg-white/5 text-white hover:border-nebula-blue/40 hover:bg-white/[0.08]',
+  solid: 'glow-button-primary',
+  ghost: 'glow-button-primary glow-button-secondary',
 };
 
 export function GlowButton({
@@ -15,9 +13,9 @@ export function GlowButton({
 }) {
   return (
     <motion.button
-      whileHover={{ y: -2, scale: 1.01 }}
-      whileTap={{ scale: 0.98 }}
-      className={`group relative inline-flex items-center justify-center overflow-hidden rounded-full border px-6 py-3 font-mono text-sm uppercase tracking-[0.28em] transition ${variants[variant]} ${className}`}
+      whileHover={{ y: -2, scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
+      className={`group relative overflow-hidden ${variants[variant]} ${className}`}
       {...props}
     >
       <span className="absolute inset-0 bg-gradient-to-r from-nebula-blue/0 via-white/10 to-plasma/0 opacity-0 transition duration-500 group-hover:opacity-100" />

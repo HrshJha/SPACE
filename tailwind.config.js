@@ -17,10 +17,10 @@ export default {
         plasma: cosmicPalette.plasmaOrange,
       },
       fontFamily: {
-        display: ['"Space Grotesk"', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
+        display: ['Orbitron', '"Exo 2"', 'sans-serif'],
+        body: ['Inter', '"DM Sans"', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
-        editorial: ['Syne', 'sans-serif'],
+        editorial: ['"Exo 2"', 'sans-serif'],
       },
       boxShadow: {
         aura: '0 0 40px rgba(74, 158, 255, 0.22)',

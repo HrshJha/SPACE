@@ -20,20 +20,20 @@ void main() {
   float angle = atan(centered.y, centered.x) + uTime * (0.1 + uSpin * 0.04);
 
   // Lensing grows sharply near the photon sphere.
-  float lensing = 0.012 / max(radius * radius, 0.006);
-  vec2 bent = centered + normalize(centered) * lensing;
+  float lensing = 0.02 / max(radius * radius, 0.005);
+  vec2 bent = centered + normalize(centered + 0.0001) * lensing;
 
   // The warped field produces secondary image streaks around the horizon.
   float streaks = sin(angle * 8.0 - uTime * 0.8) * 0.5 + 0.5;
-  float photonRing = ring(bent, 0.23 + uHover * 0.02, 0.035);
-  float halo = smoothstep(0.42, 0.08, radius);
+  float photonRing = ring(bent, 0.22 + uHover * 0.016, 0.03);
+  float halo = smoothstep(0.44, 0.07, radius);
 
   // The event horizon itself remains black; only the surrounding light survives.
   vec3 color = mix(vec3(0.08, 0.11, 0.28), vec3(0.79, 0.84, 1.0), streaks);
   color *= photonRing * (0.6 + halo * 0.4);
 
-  float alpha = photonRing * 0.95 + halo * 0.12;
-  if (radius < 0.17) {
+  float alpha = photonRing * 0.98 + halo * 0.16;
+  if (radius < 0.165) {
     color = vec3(0.0);
     alpha = 1.0;
   }
